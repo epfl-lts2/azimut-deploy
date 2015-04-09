@@ -92,9 +92,9 @@ def setup_proxmox():
     env.rabbitmq_password = str(uuid.uuid4())
     env.mysql_password = str(uuid.uuid4())
 
+    execute(disable_proxmox_repo)
     execute(server.install_sudo)
     execute(server.upgrade)
-    execute(disable_proxmox_repo)
     execute(add_gestion_user)
     execute(setup_networking)
 
