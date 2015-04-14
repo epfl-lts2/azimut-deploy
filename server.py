@@ -143,6 +143,47 @@ def add_gestion_for_self_vms():
 
 
 @task
+def setup_salt():
+    """Install and setup salt"""
+
+    execute(setup_salt_repo)
+    execute(install_salt_client)
+    execute(setup_salt_client)
+    execute(restart_salt_client)
+
+
+@task
+def setup_salt_repo():
+    """Setup the salt repository"""
+
+    sudo("echo 'deb http://debian.saltstack.com/debian wheezy-saltstack main' > /etc/apt/sources.list.d/salt.list")
+    sudo("wget -q -O- \"http://debian.saltstack.com/debian-salt-team-joehealy.gpg.key\" | apt-key add -")
+    sudo("apt-get -y update")
+
+
+@task
+def install_salt_client():
+    """Install salt client"""
+    sudo("apt-get -y install salt-minion")
+
+
+@task
+def setup_salt_client():
+    """Setup a salt client"""
+
+    append("/etc/salt/minion", "master: %s" % (config.SALT_SERVER,))
+    append("/etc/salt/minion", """
+grains:
+    type: vm_proxmox
+    gestion: not_configured""")
+
+
+@task
+def restart_salt_client():
+    sudo("service salt-minion restart")
+
+
+@task
 def setup():
     """Setup a new server [$AG:NeedKM][$AG:NeedGestion]"""
 
@@ -153,6 +194,8 @@ def setup():
     execute(copy_config)
     execute(switch_shell_to_zsh)
     execute(install_rsync)
+    if config.SALT_SERVER:
+        execute(setup_salt)
 
     if not hasattr(env, 'keymanagerName') or env.keymanagerName == '':
         prompt("Key manager name ?", 'keymanagerName')
